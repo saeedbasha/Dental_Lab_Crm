@@ -1,0 +1,1315 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DentalLab CRM Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#10B981'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { transition: background-color 0.3s ease, color 0.3s ease; }
+    .rtl { direction: rtl; }
+    .ltr { direction: ltr; }
+    .modal-backdrop { 
+      background: rgba(0,0,0,0.6); 
+      backdrop-filter: blur(4px);
+    }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .btn-transition { transition: all 0.2s ease; }
+    .btn-transition:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .status-received { background-color: #DBEAFE; color: #1E40AF; }
+    .status-in-progress { background-color: #FEF3C7; color: #92400E; }
+    .status-completed { background-color: #D1FAE5; color: #065F46; }
+    .status-shipped { background-color: #E9D5FF; color: #6B21A8; }
+    .status-delivered { background-color: #E0E7FF; color: #3730A3; }
+    .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+    .dark .status-received { background-color: #1E3A8A; color: #DBEAFE; }
+    .dark .status-in-progress { background-color: #78350F; color: #FEF3C7; }
+    .dark .status-completed { background-color: #064E3B; color: #D1FAE5; }
+    .dark .status-shipped { background-color: #581C87; color: #E9D5FF; }
+    .dark .status-delivered { background-color: #312E81; color: #E0E7FF; }
+    .dark .status-cancelled { background-color: #7F1D1D; color: #FEE2E2; }
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #10B981;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+    .save-indicator.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 antialiased transition-colors duration-300">
+  <div id="app" class="min-h-screen p-4 sm:p-8">
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <header class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6 fade-in">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 id="appTitle" class="text-3xl font-bold flex items-center gap-3">
+              <span class="text-4xl">🦷</span>
+              <span>DentalLab CRM Pro</span>
+            </h1>
+            <p id="subtitle" class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+              Track clinic orders, statuses and communicate with ease.
+            </p>
+          </div>
+          <div class="flex items-center gap-3">
+            <!-- Language Toggle -->
+            <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex gap-1">
+              <button id="btnEn" class="px-4 py-2 rounded-md font-medium transition-all duration-200 btn-transition">
+                EN
+              </button>
+              <button id="btnDe" class="px-4 py-2 rounded-md font-medium transition-all duration-200 btn-transition">
+                DE
+              </button>
+              <button id="btnAr" class="px-4 py-2 rounded-md font-medium transition-all duration-200 btn-transition">
+                العربية
+              </button>
+            </div>
+            <!-- Dark Mode Toggle -->
+            <button id="darkToggle" class="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors btn-transition">
+              <span id="darkIcon" class="text-xl">🌙</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Orders Section -->
+        <div class="lg:col-span-3">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 fade-in">
+            <!-- Controls -->
+            <div class="flex flex-wrap gap-3 mb-6">
+              <input 
+                id="search" 
+                type="text"
+                placeholder="Search clinics, types, notes..." 
+                class="flex-1 min-w-[200px] px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <select id="statusFilter" class="px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary">
+                <option value="All">All statuses</option>
+              </select>
+              <select id="clinicFilter" class="px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary">
+                <option value="">All clinics</option>
+              </select>
+              <select id="sortBy" class="px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary">
+                <option value="receivedDate">Sort by received</option>
+                <option value="dueDate">Sort by due date</option>
+                <option value="clinic">Sort by clinic</option>
+                <option value="status">Sort by status</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-3 mb-6">
+              <button id="newOrder" class="px-6 py-2.5 bg-primary hover:bg-indigo-700 text-white rounded-lg shadow-md btn-transition font-medium">
+                ➕ <span id="newOrderText">New Order</span>
+              </button>
+              <button id="exportCsv" class="px-6 py-2.5 bg-secondary hover:bg-green-700 text-white rounded-lg shadow-md btn-transition font-medium">
+                📥 <span id="exportText">Export CSV</span>
+              </button>
+              <label class="px-6 py-2.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg shadow-md cursor-pointer btn-transition font-medium inline-flex items-center gap-2">
+                📤 <span id="importText">Import CSV</span>
+                <input id="importFile" type="file" accept=".csv" class="hidden" />
+              </label>
+            </div>
+
+            <!-- Orders Table -->
+            <div class="overflow-x-auto rounded-lg border dark:border-gray-700">
+              <table class="w-full text-left">
+                <thead class="bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-700">
+                  <tr>
+                    <th class="p-3 text-sm font-semibold" id="thClinic">Clinic</th>
+                    <th class="p-3 text-sm font-semibold" id="thPatient">Patient</th>
+                    <th class="p-3 text-sm font-semibold" id="thType">Type</th>
+                    <th class="p-3 text-sm font-semibold" id="thReceived">Received</th>
+                    <th class="p-3 text-sm font-semibold" id="thDue">Due</th>
+                    <th class="p-3 text-sm font-semibold" id="thStatus">Status</th>
+                    <th class="p-3 text-sm font-semibold" id="thShipping">Shipping</th>
+                    <th class="p-3 text-sm font-semibold" id="thActions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ordersBody" class="divide-y dark:divide-gray-700">
+                  <!-- Orders will be rendered here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-12">
+              <div class="text-6xl mb-4">📋</div>
+              <h3 class="text-xl font-semibold mb-2" id="emptyTitle">No orders yet</h3>
+              <p class="text-gray-600 dark:text-gray-400 mb-4" id="emptyDesc">Start by adding a new order or load sample data</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="lg:col-span-1">
+          <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 fade-in">
+            <h3 id="summaryTitle" class="text-lg font-semibold mb-4">📊 Summary</h3>
+            <div id="totalOrders" class="text-2xl font-bold mb-4 text-primary">0</div>
+            <div id="statusCounts" class="space-y-2 mb-6"></div>
+            
+            <hr class="my-6 border-gray-200 dark:border-gray-700" />
+            
+            <h4 id="settingsTitle" class="font-semibold mb-3">⚙️ Settings</h4>
+            <div class="space-y-3 mb-6">
+              <label class="flex items-center justify-between cursor-pointer">
+                <span class="text-sm" id="autoExportLabel">Auto-Export on Save</span>
+                <input type="checkbox" id="autoExport" class="w-4 h-4 text-primary rounded focus:ring-2 focus:ring-primary">
+              </label>
+              <div class="text-xs text-gray-500 dark:text-gray-400" id="autoExportNote">
+                Creates 'dentallab_orders_backup.csv' file on each save
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400" id="lastSaved">
+                Last saved: Never
+              </div>
+            </div>
+            
+            <hr class="my-6 border-gray-200 dark:border-gray-700" />
+            
+            <h4 id="quickActionsTitle" class="font-semibold mb-3">⚡ Quick Actions</h4>
+            <div class="space-y-2">
+              <button id="loadSample" class="w-full px-4 py-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors btn-transition">
+                <span id="loadSampleText">Load Sample Data</span>
+              </button>
+              <button id="clearAll" class="w-full px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors btn-transition">
+                <span id="clearAllText">Clear All</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Modal -->
+      <div id="modal" class="fixed inset-0 hidden items-center justify-center modal-backdrop z-50 p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-lg shadow-2xl fade-in max-h-[90vh] overflow-y-auto">
+          <div class="p-6">
+            <h2 id="modalTitle" class="text-2xl font-bold mb-6">New Order</h2>
+            <form id="orderForm" class="space-y-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelClinic">
+                    Clinic Name <span class="text-red-500">*</span>
+                  </label>
+                  <input 
+                    required 
+                    id="clinic" 
+                    type="text"
+                    placeholder="Dr. Smith Dental Clinic" 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelPatient">
+                    Patient Name
+                  </label>
+                  <input 
+                    id="patient" 
+                    type="text"
+                    placeholder="John Smith" 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelType">
+                    Work Type
+                  </label>
+                  <input 
+                    id="type" 
+                    type="text"
+                    list="workTypesList"
+                    placeholder="Type or select from list..." 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <datalist id="workTypesList">
+                  </datalist>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelContact">
+                    Contact
+                  </label>
+                  <input 
+                    id="contact" 
+                    type="text"
+                    placeholder="email@clinic.com or +49..." 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelReceived">
+                    Received Date
+                  </label>
+                  <input 
+                    id="receivedDate" 
+                    type="date" 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelDue">
+                    Due Date
+                  </label>
+                  <input 
+                    id="dueDate" 
+                    type="date" 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-2" id="labelStatus">
+                  Status
+                </label>
+                <select 
+                  id="status" 
+                  class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary"
+                >
+                </select>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelShippingCompany">
+                    Shipping Company
+                  </label>
+                  <input 
+                    id="shippingCompany" 
+                    type="text"
+                    list="shippingCompaniesList"
+                    placeholder="e.g., DHL, UPS..." 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <datalist id="shippingCompaniesList">
+                    <option value="DHL">
+                    <option value="UPS">
+                    <option value="FedEx">
+                    <option value="DPD">
+                    <option value="Hermes">
+                    <option value="GLS">
+                    <option value="Deutsche Post">
+                  </datalist>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2" id="labelTrackingNumber">
+                    Tracking Number
+                  </label>
+                  <input 
+                    id="trackingNumber" 
+                    type="text"
+                    placeholder="e.g., 1Z999AA10123456784" 
+                    class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium mb-2" id="labelNotes">
+                  Notes
+                </label>
+                <textarea 
+                  id="notes" 
+                  placeholder="Additional notes, shade, special requirements..." 
+                  class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-transparent min-h-[100px]"
+                ></textarea>
+              </div>
+
+              <div class="flex justify-end gap-3 pt-4">
+                <button 
+                  type="button" 
+                  id="cancelBtn" 
+                  class="px-6 py-2.5 border dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors btn-transition font-medium"
+                >
+                  <span id="cancelText">Cancel</span>
+                </button>
+                <button 
+                  type="submit" 
+                  class="px-6 py-2.5 bg-primary hover:bg-indigo-700 text-white rounded-lg shadow-md btn-transition font-medium"
+                >
+                  <span id="saveText">Save Order</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer class="text-center text-sm text-gray-500 dark:text-gray-400 mt-8 py-4">
+        <p>DentalLab CRM Pro • Data stored locally in your browser • © 2025</p>
+      </footer>
+    </div>
+  </div>
+
+  <!-- Save Indicator -->
+  <div id="saveIndicator" class="save-indicator">
+    ✓ <span id="saveIndicatorText">Data saved!</span>
+  </div>
+
+<script>
+/* DentalLab CRM Pro - Enhanced with tracking & shipping + German language */
+
+const STATUS = ["Received", "In Progress", "Completed", "Shipped", "Delivered", "Cancelled"];
+const STORAGE_KEY = 'dentallab_orders_v3';
+const LANG_KEY = 'dentallab_lang_v3';
+const DARK_KEY = 'dentallab_dark_v3';
+const AUTO_EXPORT_KEY = 'dentallab_autoexport_v3';
+
+// Translations
+const T = {
+  en: {
+    title: "DentalLab CRM Pro",
+    subtitle: "Track clinic orders, statuses and communicate with ease.",
+    newOrder: "New Order",
+    searchPlaceholder: "Search clinics, patients, types, notes...",
+    allStatuses: "All statuses",
+    allClinics: "All clinics",
+    sortByReceived: "Sort by received",
+    sortByDue: "Sort by due date",
+    sortByClinic: "Sort by clinic",
+    sortByStatus: "Sort by status",
+    clinic: "Clinic",
+    patient: "Patient",
+    type: "Type",
+    received: "Received",
+    dueDate: "Due",
+    status: "Status",
+    shipping: "Shipping",
+    actions: "Actions",
+    summary: "Summary",
+    totalOrders: "Total Orders",
+    settings: "Settings",
+    autoExportLabel: "Auto-Export on Save",
+    autoExportNote: "Creates 'dentallab_orders_backup.csv' file on each save",
+    lastSaved: "Last saved",
+    never: "Never",
+    dataSaved: "Data saved!",
+    dataExported: "Data saved & exported!",
+    quickActions: "Quick Actions",
+    loadSample: "Load Sample Data",
+    clearAll: "Clear All",
+    edit: "Edit",
+    delete: "Delete",
+    save: "Save Order",
+    cancel: "Cancel",
+    receivedDate: "Received Date",
+    typeLabel: "Work Type",
+    typePlaceholder: "Type or select from list...",
+    clinicLabel: "Clinic Name",
+    patientLabel: "Patient Name",
+    patientPlaceholder: "e.g., John Smith",
+    contactLabel: "Contact",
+    shippingCompanyLabel: "Shipping Company",
+    trackingNumberLabel: "Tracking Number",
+    notes: "Notes",
+    importCSV: "Import CSV",
+    exportCSV: "Export CSV",
+    emptyTitle: "No orders yet",
+    emptyDesc: "Start by adding a new order or load sample data",
+    deleteConfirm: "Are you sure you want to delete this order?",
+    clearConfirm: "Are you sure you want to clear all orders?",
+    clinicRequired: "Clinic name is required",
+    imported: "Imported",
+    rows: "rows",
+    importError: "Failed to import CSV"
+  },
+  de: {
+    title: "DentalLab CRM Pro",
+    subtitle: "Verfolgen Sie Klinikaufträge, Status und kommunizieren Sie mit Leichtigkeit.",
+    newOrder: "Neuer Auftrag",
+    searchPlaceholder: "Suche nach Kliniken, Patienten, Typen, Notizen...",
+    allStatuses: "Alle Status",
+    allClinics: "Alle Kliniken",
+    sortByReceived: "Nach Eingangsdatum sortieren",
+    sortByDue: "Nach Fälligkeitsdatum sortieren",
+    sortByClinic: "Nach Klinik sortieren",
+    sortByStatus: "Nach Status sortieren",
+    clinic: "Klinik",
+    patient: "Patient",
+    type: "Typ",
+    received: "Eingegangen",
+    dueDate: "Fällig",
+    status: "Status",
+    shipping: "Versand",
+    actions: "Aktionen",
+    summary: "Zusammenfassung",
+    totalOrders: "Gesamtaufträge",
+    settings: "Einstellungen",
+    autoExportLabel: "Auto-Export beim Speichern",
+    autoExportNote: "Erstellt 'dentallab_orders_backup.csv' Datei bei jedem Speichern",
+    lastSaved: "Zuletzt gespeichert",
+    never: "Nie",
+    dataSaved: "Daten gespeichert!",
+    dataExported: "Daten gespeichert & exportiert!",
+    quickActions: "Schnellaktionen",
+    loadSample: "Beispieldaten laden",
+    clearAll: "Alles löschen",
+    edit: "Bearbeiten",
+    delete: "Löschen",
+    save: "Auftrag speichern",
+    cancel: "Abbrechen",
+    receivedDate: "Eingangsdatum",
+    typeLabel: "Arbeitstyp",
+    typePlaceholder: "Eingeben oder aus Liste wählen...",
+    clinicLabel: "Klinikname",
+    patientLabel: "Patientenname",
+    patientPlaceholder: "z.B. Hans Müller",
+    contactLabel: "Kontakt",
+    shippingCompanyLabel: "Versandunternehmen",
+    trackingNumberLabel: "Sendungsnummer",
+    notes: "Notizen",
+    importCSV: "CSV importieren",
+    exportCSV: "CSV exportieren",
+    emptyTitle: "Noch keine Aufträge",
+    emptyDesc: "Beginnen Sie mit dem Hinzufügen eines neuen Auftrags oder laden Sie Beispieldaten",
+    deleteConfirm: "Sind Sie sicher, dass Sie diesen Auftrag löschen möchten?",
+    clearConfirm: "Sind Sie sicher, dass Sie alle Aufträge löschen möchten?",
+    clinicRequired: "Klinikname ist erforderlich",
+    imported: "Importiert",
+    rows: "Zeilen",
+    importError: "CSV-Import fehlgeschlagen"
+  },
+  ar: {
+    title: "نظام إدارة مخبر الأسنان",
+    subtitle: "تتبع طلبات العيادات وحالاتها والتواصل بسهولة.",
+    newOrder: "طلب جديد",
+    searchPlaceholder: "ابحث عن العيادات، المرضى، النوع، الملاحظات...",
+    allStatuses: "كل الحالات",
+    allClinics: "كل العيادات",
+    sortByReceived: "فرز حسب تاريخ الاستلام",
+    sortByDue: "فرز حسب تاريخ الاستحقاق",
+    sortByClinic: "فرز حسب العيادة",
+    sortByStatus: "فرز حسب الحالة",
+    clinic: "العيادة",
+    patient: "المريض",
+    type: "النوع",
+    received: "الاستلام",
+    dueDate: "الاستحقاق",
+    status: "الحالة",
+    shipping: "الشحن",
+    actions: "الإجراءات",
+    summary: "الملخص",
+    totalOrders: "إجمالي الطلبات",
+    settings: "الإعدادات",
+    autoExportLabel: "تصدير تلقائي عند الحفظ",
+    autoExportNote: "ينشئ ملف 'dentallab_orders_backup.csv' مع كل حفظ",
+    lastSaved: "آخر حفظ",
+    never: "أبداً",
+    dataSaved: "تم حفظ البيانات!",
+    dataExported: "تم الحفظ والتصدير!",
+    quickActions: "إجراءات سريعة",
+    loadSample: "تحميل بيانات نموذجية",
+    clearAll: "مسح الكل",
+    edit: "تعديل",
+    delete: "حذف",
+    save: "حفظ الطلب",
+    cancel: "إلغاء",
+    receivedDate: "تاريخ الاستلام",
+    typeLabel: "نوع العمل",
+    typePlaceholder: "اكتب أو اختر من القائمة...",
+    clinicLabel: "اسم العيادة",
+    patientLabel: "اسم المريض",
+    patientPlaceholder: "مثال: أحمد محمد",
+    contactLabel: "جهة الاتصال",
+    shippingCompanyLabel: "شركة الشحن",
+    trackingNumberLabel: "رقم التتبع",
+    notes: "ملاحظات",
+    importCSV: "استيراد CSV",
+    exportCSV: "تصدير CSV",
+    emptyTitle: "لا توجد طلبات بعد",
+    emptyDesc: "ابدأ بإضافة طلب جديد أو تحميل بيانات نموذجية",
+    deleteConfirm: "هل أنت متأكد من حذف هذا الطلب؟",
+    clearConfirm: "هل أنت متأكد من مسح جميع الطلبات؟",
+    clinicRequired: "اسم العيادة مطلوب",
+    imported: "تم استيراد",
+    rows: "صف",
+    importError: "فشل استيراد CSV"
+  }
+};
+
+// Work types with translations
+const WORK_TYPES = {
+  en: [
+    "Crown (Ceramic)",
+    "Crown (Zirconia)",
+    "Crown (Metal)",
+    "Crown (PFM - Porcelain Fused to Metal)",
+    "Bridge (3-unit)",
+    "Bridge (4-unit)",
+    "Bridge (Maryland)",
+    "Implant Crown",
+    "Implant Bridge",
+    "Veneer (Ceramic)",
+    "Veneer (Composite)",
+    "Full Denture (Upper)",
+    "Full Denture (Lower)",
+    "Full Denture (Complete Set)",
+    "Partial Denture (Upper)",
+    "Partial Denture (Lower)",
+    "Inlay",
+    "Onlay",
+    "Night Guard",
+    "Sports Guard",
+    "Temporary Crown",
+    "All-on-4",
+    "All-on-6"
+  ],
+  de: [
+    "Krone (Keramik)",
+    "Krone (Zirkon)",
+    "Krone (Metall)",
+    "Krone (VMK - Verblendmetallkeramik)",
+    "Brücke (3-gliedrig)",
+    "Brücke (4-gliedrig)",
+    "Brücke (Maryland)",
+    "Implantatkrone",
+    "Implantatbrücke",
+    "Veneer (Keramik)",
+    "Veneer (Komposit)",
+    "Vollprothese (Oberkiefer)",
+    "Vollprothese (Unterkiefer)",
+    "Vollprothese (Komplett)",
+    "Teilprothese (Oberkiefer)",
+    "Teilprothese (Unterkiefer)",
+    "Inlay",
+    "Onlay",
+    "Aufbissschiene",
+    "Sportschutz",
+    "Provisorische Krone",
+    "All-on-4",
+    "All-on-6"
+  ],
+  ar: [
+    "تاج (سيراميك)",
+    "تاج (زركونيا)",
+    "تاج (معدن)",
+    "تاج (بورسلين مدمج بمعدن)",
+    "جسر (3 وحدات)",
+    "جسر (4 وحدات)",
+    "جسر (ماريلاند)",
+    "تاج زرعة",
+    "جسر زرعة",
+    "قشرة (سيراميك)",
+    "قشرة (مركب)",
+    "طقم كامل (علوي)",
+    "طقم كامل (سفلي)",
+    "طقم كامل (كامل)",
+    "طقم جزئي (علوي)",
+    "طقم جزئي (سفلي)",
+    "حشوة داخلية",
+    "حشوة خارجية",
+    "واقي ليلي",
+    "واقي رياضي",
+    "تاج مؤقت",
+    "الكل على 4",
+    "الكل على 6"
+  ]
+};
+
+// State
+let orders = [];
+let editingId = null;
+let lang = localStorage.getItem(LANG_KEY) || 'en';
+let dark = localStorage.getItem(DARK_KEY) === 'true';
+let autoExport = localStorage.getItem(AUTO_EXPORT_KEY) === 'true';
+
+// DOM Elements
+const appRoot = document.getElementById('app');
+const ordersBody = document.getElementById('ordersBody');
+const emptyState = document.getElementById('emptyState');
+const statusFilter = document.getElementById('statusFilter');
+const clinicFilter = document.getElementById('clinicFilter');
+const searchInput = document.getElementById('search');
+const sortBy = document.getElementById('sortBy');
+const totalOrdersEl = document.getElementById('totalOrders');
+const statusCountsEl = document.getElementById('statusCounts');
+const modal = document.getElementById('modal');
+const orderForm = document.getElementById('orderForm');
+const modalTitle = document.getElementById('modalTitle');
+const newOrderBtn = document.getElementById('newOrder');
+const cancelBtn = document.getElementById('cancelBtn');
+const exportBtn = document.getElementById('exportCsv');
+const importFile = document.getElementById('importFile');
+const loadSampleBtn = document.getElementById('loadSample');
+const clearAllBtn = document.getElementById('clearAll');
+const btnEn = document.getElementById('btnEn');
+const btnDe = document.getElementById('btnDe');
+const btnAr = document.getElementById('btnAr');
+const darkToggle = document.getElementById('darkToggle');
+const darkIcon = document.getElementById('darkIcon');
+const autoExportCheckbox = document.getElementById('autoExport');
+const saveIndicator = document.getElementById('saveIndicator');
+const lastSavedEl = document.getElementById('lastSaved');
+
+// Form fields
+const clinicInput = document.getElementById('clinic');
+const patientInput = document.getElementById('patient');
+const contactInput = document.getElementById('contact');
+const typeInput = document.getElementById('type');
+const receivedInput = document.getElementById('receivedDate');
+const dueInput = document.getElementById('dueDate');
+const statusInput = document.getElementById('status');
+const shippingCompanyInput = document.getElementById('shippingCompany');
+const trackingNumberInput = document.getElementById('trackingNumber');
+const notesInput = document.getElementById('notes');
+
+// Utilities
+function uid() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8); }
+function todayISO() { return new Date().toISOString().slice(0,10); }
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m]));
+}
+
+// Initialize
+function init() {
+  // Load orders from localStorage
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    orders = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    orders = [];
+  }
+
+  // Set language and dark mode
+  setLang(lang);
+  setDark(dark);
+
+  // Populate status options
+  STATUS.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s;
+    opt.textContent = s;
+    statusFilter.appendChild(opt.cloneNode(true));
+    statusInput.appendChild(opt);
+  });
+
+  // Event listeners
+  newOrderBtn.addEventListener('click', openNew);
+  cancelBtn.addEventListener('click', closeModal);
+  orderForm.addEventListener('submit', saveOrder);
+  searchInput.addEventListener('input', render);
+  statusFilter.addEventListener('change', render);
+  clinicFilter.addEventListener('change', render);
+  sortBy.addEventListener('change', render);
+  exportBtn.addEventListener('click', exportCSV);
+  importFile.addEventListener('change', handleImport);
+  loadSampleBtn.addEventListener('click', loadSampleData);
+  clearAllBtn.addEventListener('click', clearAllOrders);
+  btnEn.addEventListener('click', () => setLang('en'));
+  btnDe.addEventListener('click', () => setLang('de'));
+  btnAr.addEventListener('click', () => setLang('ar'));
+  darkToggle.addEventListener('click', toggleDark);
+  autoExportCheckbox.addEventListener('change', toggleAutoExport);
+
+  // Initialize auto-export checkbox
+  autoExportCheckbox.checked = autoExport;
+  
+  // Initialize last saved text
+  const t = T[lang];
+  lastSavedEl.textContent = `${t.lastSaved}: ${t.never}`;
+
+  // Close modal on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+
+  render();
+}
+
+// Persist to localStorage
+function persist() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+  updateLastSaved();
+  showSaveIndicator();
+  
+  // Auto-export if enabled
+  if (autoExport) {
+    setTimeout(() => exportCSV(true), 100);
+  }
+}
+
+// Show save indicator
+function showSaveIndicator(isExport = false) {
+  const t = T[lang];
+  const indicatorText = document.getElementById('saveIndicatorText');
+  indicatorText.textContent = isExport ? t.dataExported : t.dataSaved;
+  
+  saveIndicator.classList.add('show');
+  
+  setTimeout(() => {
+    saveIndicator.classList.remove('show');
+  }, 2000);
+}
+
+// Update last saved timestamp
+function updateLastSaved() {
+  const t = T[lang];
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString(lang === 'ar' ? 'ar' : lang === 'de' ? 'de' : 'en', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  lastSavedEl.textContent = `${t.lastSaved}: ${timeStr}`;
+}
+
+// Toggle auto-export
+function toggleAutoExport() {
+  autoExport = autoExportCheckbox.checked;
+  localStorage.setItem(AUTO_EXPORT_KEY, autoExport ? 'true' : 'false');
+}
+
+// Update work types datalist based on language
+function updateWorkTypes() {
+  const workTypesDatalist = document.getElementById('workTypesList');
+  workTypesDatalist.innerHTML = '';
+  const types = WORK_TYPES[lang] || WORK_TYPES.en;
+  types.forEach(type => {
+    const opt = document.createElement('option');
+    opt.value = type;
+    workTypesDatalist.appendChild(opt);
+  });
+}
+
+// Language switcher
+function setLang(l) {
+  lang = l;
+  localStorage.setItem(LANG_KEY, lang);
+  const t = T[lang];
+
+  // Update HTML attributes
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  
+  // Update language buttons
+  [btnEn, btnDe, btnAr].forEach(btn => {
+    btn.classList.remove('bg-primary', 'text-white');
+    btn.classList.add('bg-transparent', 'text-gray-700', 'dark:text-gray-300');
+  });
+  
+  const activeBtn = lang === 'en' ? btnEn : lang === 'de' ? btnDe : btnAr;
+  activeBtn.classList.add('bg-primary', 'text-white');
+  activeBtn.classList.remove('bg-transparent', 'text-gray-700', 'dark:text-gray-300');
+
+  // Update RTL class
+  if (lang === 'ar') {
+    appRoot.classList.add('rtl');
+    appRoot.classList.remove('ltr');
+  } else {
+    appRoot.classList.add('ltr');
+    appRoot.classList.remove('rtl');
+  }
+
+  // Update all text elements
+  document.getElementById('appTitle').textContent = t.title;
+  document.getElementById('subtitle').textContent = t.subtitle;
+  document.getElementById('newOrderText').textContent = t.newOrder;
+  document.getElementById('exportText').textContent = t.exportCSV;
+  document.getElementById('importText').textContent = t.importCSV;
+  document.getElementById('summaryTitle').textContent = t.summary;
+  document.getElementById('settingsTitle').textContent = t.settings;
+  document.getElementById('autoExportLabel').textContent = t.autoExportLabel;
+  document.getElementById('autoExportNote').textContent = t.autoExportNote;
+  document.getElementById('loadSampleText').textContent = t.loadSample;
+  document.getElementById('clearAllText').textContent = t.clearAll;
+  document.getElementById('quickActionsTitle').textContent = t.quickActions;
+  document.getElementById('emptyTitle').textContent = t.emptyTitle;
+  document.getElementById('emptyDesc').textContent = t.emptyDesc;
+  
+  // Update table headers
+  document.getElementById('thClinic').textContent = t.clinic;
+  document.getElementById('thPatient').textContent = t.patient;
+  document.getElementById('thType').textContent = t.type;
+  document.getElementById('thReceived').textContent = t.received;
+  document.getElementById('thDue').textContent = t.dueDate;
+  document.getElementById('thStatus').textContent = t.status;
+  document.getElementById('thShipping').textContent = t.shipping;
+  document.getElementById('thActions').textContent = t.actions;
+
+  // Update form labels
+  document.getElementById('labelClinic').innerHTML = t.clinicLabel + ' <span class="text-red-500">*</span>';
+  document.getElementById('labelPatient').textContent = t.patientLabel;
+  document.getElementById('labelContact').textContent = t.contactLabel;
+  document.getElementById('labelType').textContent = t.typeLabel;
+  document.getElementById('labelReceived').textContent = t.receivedDate;
+  document.getElementById('labelDue').textContent = t.dueDate;
+  document.getElementById('labelStatus').textContent = t.status;
+  document.getElementById('labelShippingCompany').textContent = t.shippingCompanyLabel;
+  document.getElementById('labelTrackingNumber').textContent = t.trackingNumberLabel;
+  document.getElementById('labelNotes').textContent = t.notes;
+  document.getElementById('cancelText').textContent = t.cancel;
+  document.getElementById('saveText').textContent = t.save;
+
+  // Update placeholders
+  searchInput.placeholder = t.searchPlaceholder;
+  patientInput.placeholder = t.patientPlaceholder;
+  typeInput.placeholder = t.typePlaceholder;
+  statusFilter.options[0].textContent = t.allStatuses;
+  clinicFilter.options[0].textContent = t.allClinics;
+  
+  // Update sort options
+  sortBy.options[0].textContent = t.sortByReceived;
+  sortBy.options[1].textContent = t.sortByDue;
+  sortBy.options[2].textContent = t.sortByClinic;
+  sortBy.options[3].textContent = t.sortByStatus;
+
+  // Update work types
+  updateWorkTypes();
+
+  // Update last saved text
+  const savedTime = lastSavedEl.textContent.split(': ')[1];
+  if (savedTime && savedTime !== 'Never' && savedTime !== 'Nie' && savedTime !== 'أبداً') {
+    lastSavedEl.textContent = `${t.lastSaved}: ${savedTime}`;
+  } else {
+    lastSavedEl.textContent = `${t.lastSaved}: ${t.never}`;
+  }
+
+  render();
+}
+
+// Dark mode toggle
+function setDark(isDark) {
+  dark = isDark;
+  localStorage.setItem(DARK_KEY, dark ? 'true' : 'false');
+  
+  if (dark) {
+    document.documentElement.classList.add('dark');
+    darkIcon.textContent = '☀️';
+  } else {
+    document.documentElement.classList.remove('dark');
+    darkIcon.textContent = '🌙';
+  }
+}
+
+function toggleDark() {
+  setDark(!dark);
+}
+
+// Render orders
+function render() {
+  const t = T[lang];
+  const list = filteredList();
+
+  // Show/hide empty state
+  if (orders.length === 0) {
+    emptyState.classList.remove('hidden');
+    ordersBody.parentElement.parentElement.classList.add('hidden');
+  } else {
+    emptyState.classList.add('hidden');
+    ordersBody.parentElement.parentElement.classList.remove('hidden');
+  }
+
+  // Update clinic filter
+  const clinics = Array.from(new Set(orders.map(o => o.clinic))).filter(Boolean).sort();
+  const currentClinic = clinicFilter.value;
+  clinicFilter.innerHTML = `<option value="">${t.allClinics}</option>`;
+  clinics.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    clinicFilter.appendChild(opt);
+  });
+  clinicFilter.value = currentClinic;
+
+  // Render orders table
+  ordersBody.innerHTML = '';
+  list.forEach(o => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors';
+    
+    const statusClass = `status-${o.status.toLowerCase().replace(' ', '-')}`;
+    
+    // Build shipping info HTML
+    let shippingHtml = '';
+    if (o.shippingCompany || o.trackingNumber) {
+      shippingHtml = '<div class="text-sm">';
+      if (o.shippingCompany) {
+        shippingHtml += `<div class="font-medium">${escapeHtml(o.shippingCompany)}</div>`;
+      }
+      if (o.trackingNumber) {
+        shippingHtml += `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono">${escapeHtml(o.trackingNumber)}</div>`;
+      }
+      shippingHtml += '</div>';
+    } else {
+      shippingHtml = '<span class="text-gray-400 text-sm">-</span>';
+    }
+    
+    tr.innerHTML = `
+      <td class="p-3">
+        <div class="font-semibold">${escapeHtml(o.clinic)}</div>
+        ${o.contact ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-1">${escapeHtml(o.contact)}</div>` : ''}
+      </td>
+      <td class="p-3">
+        ${o.patient ? `<div class="font-medium">${escapeHtml(o.patient)}</div>` : `<span class="text-gray-400 text-sm">-</span>`}
+      </td>
+      <td class="p-3">${escapeHtml(o.type || '-')}</td>
+      <td class="p-3 text-sm">${escapeHtml(o.receivedDate || '-')}</td>
+      <td class="p-3 text-sm">${escapeHtml(o.dueDate || '-')}</td>
+      <td class="p-3">
+        <span class="status-badge ${statusClass}">${escapeHtml(o.status)}</span>
+        ${o.notes ? `<div class="text-xs text-gray-500 dark:text-gray-400 mt-2">${escapeHtml(o.notes).substring(0, 50)}${o.notes.length > 50 ? '...' : ''}</div>` : ''}
+      </td>
+      <td class="p-3">
+        ${shippingHtml}
+      </td>
+      <td class="p-3">
+        <div class="flex gap-2">
+          <button class="editBtn px-3 py-1.5 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" data-id="${o.id}">
+            ${t.edit}
+          </button>
+          <button class="delBtn px-3 py-1.5 text-sm bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors" data-id="${o.id}">
+            ${t.delete}
+          </button>
+        </div>
+      </td>
+    `;
+
+    tr.querySelectorAll('.editBtn').forEach(b => b.addEventListener('click', (e) => openEdit(e.target.dataset.id)));
+    tr.querySelectorAll('.delBtn').forEach(b => b.addEventListener('click', (e) => deleteOrder(e.target.dataset.id)));
+
+    ordersBody.appendChild(tr);
+  });
+
+  // Update summary
+  totalOrdersEl.textContent = orders.length.toString();
+  statusCountsEl.innerHTML = '';
+  STATUS.forEach(s => {
+    const count = orders.filter(o => o.status === s).length;
+    const statusClass = `status-${s.toLowerCase().replace(' ', '-')}`;
+    const div = document.createElement('div');
+    div.className = 'flex items-center justify-between p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50';
+    div.innerHTML = `
+      <span class="text-sm">${s}</span>
+      <span class="status-badge ${statusClass}">${count}</span>
+    `;
+    statusCountsEl.appendChild(div);
+  });
+}
+
+// Filter and sort
+function filteredList() {
+  const q = (searchInput.value || '').toLowerCase();
+  const st = statusFilter.value;
+  const clinic = clinicFilter.value;
+  const sb = sortBy.value || 'receivedDate';
+  
+  let list = orders.slice();
+  
+  if (st !== 'All') list = list.filter(o => o.status === st);
+  if (clinic) list = list.filter(o => o.clinic === clinic);
+  if (q) {
+    list = list.filter(o => 
+      (o.clinic || '').toLowerCase().includes(q) ||
+      (o.patient || '').toLowerCase().includes(q) ||
+      (o.contact || '').toLowerCase().includes(q) ||
+      (o.type || '').toLowerCase().includes(q) ||
+      (o.notes || '').toLowerCase().includes(q) ||
+      (o.trackingNumber || '').toLowerCase().includes(q) ||
+      (o.shippingCompany || '').toLowerCase().includes(q)
+    );
+  }
+  
+  list.sort((a, b) => {
+    const aVal = a[sb] || '';
+    const bVal = b[sb] || '';
+    return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+  });
+  
+  return list;
+}
+
+// CRUD Operations
+function openNew() {
+  const t = T[lang];
+  editingId = null;
+  modalTitle.textContent = t.newOrder;
+  clinicInput.value = '';
+  patientInput.value = '';
+  contactInput.value = '';
+  typeInput.value = '';
+  receivedInput.value = todayISO();
+  dueInput.value = '';
+  statusInput.value = STATUS[0];
+  shippingCompanyInput.value = '';
+  trackingNumberInput.value = '';
+  notesInput.value = '';
+  openModal();
+}
+
+function openEdit(id) {
+  const t = T[lang];
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+  
+  editingId = id;
+  modalTitle.textContent = t.edit;
+  clinicInput.value = o.clinic || '';
+  patientInput.value = o.patient || '';
+  contactInput.value = o.contact || '';
+  typeInput.value = o.type || '';
+  receivedInput.value = o.receivedDate || todayISO();
+  dueInput.value = o.dueDate || '';
+  statusInput.value = o.status || STATUS[0];
+  shippingCompanyInput.value = o.shippingCompany || '';
+  trackingNumberInput.value = o.trackingNumber || '';
+  notesInput.value = o.notes || '';
+  openModal();
+}
+
+function saveOrder(e) {
+  e.preventDefault();
+  const t = T[lang];
+  
+  const o = {
+    id: editingId || uid(),
+    clinic: clinicInput.value.trim(),
+    patient: patientInput.value.trim(),
+    contact: contactInput.value.trim(),
+    type: typeInput.value.trim(),
+    receivedDate: receivedInput.value,
+    dueDate: dueInput.value,
+    status: statusInput.value,
+    shippingCompany: shippingCompanyInput.value.trim(),
+    trackingNumber: trackingNumberInput.value.trim(),
+    notes: notesInput.value.trim(),
+  };
+  
+  if (!o.clinic) {
+    alert(t.clinicRequired);
+    return;
+  }
+  
+  if (editingId) {
+    orders = orders.map(x => x.id === editingId ? o : x);
+  } else {
+    orders.unshift(o);
+  }
+  
+  persist();
+  closeModal();
+  render();
+}
+
+function deleteOrder(id) {
+  const t = T[lang];
+  if (confirm(t.deleteConfirm)) {
+    orders = orders.filter(x => x.id !== id);
+    persist();
+    render();
+  }
+}
+
+function clearAllOrders() {
+  const t = T[lang];
+  if (confirm(t.clearConfirm)) {
+    orders = [];
+    persist();
+    render();
+  }
+}
+
+// Modal controls
+function openModal() {
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+  clinicInput.focus();
+}
+
+function closeModal() {
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+  document.body.style.overflow = 'auto';
+  editingId = null;
+}
+
+// CSV Export
+function exportCSV(isAutoExport = false) {
+  const headers = ['id', 'clinic', 'patient', 'contact', 'type', 'receivedDate', 'dueDate', 'status', 'shippingCompany', 'trackingNumber', 'notes'];
+  const rows = [headers.join(',')];
+  
+  orders.forEach(o => {
+    rows.push(headers.map(h => `"${String(o[h] || '').replace(/"/g, '""')}"`).join(','));
+  });
+  
+  const csv = rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  
+  // Use consistent filename for auto-export, dated filename for manual export
+  if (isAutoExport) {
+    a.download = `dentallab_orders_backup.csv`;
+  } else {
+    a.download = `dentallab_orders_${todayISO()}.csv`;
+  }
+  
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  // Show indicator for auto-export
+  if (isAutoExport) {
+    showSaveIndicator(true);
+  }
+}
+
+// CSV Import
+function handleImport(e) {
+  if (e.target.files && e.target.files[0]) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (ev) => importCSV(ev.target.result);
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+}
+
+function importCSV(text) {
+  const t = T[lang];
+  try {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, ''));
+    
+    const data = lines.slice(1).map(ln => {
+      const values = ln.match(/(?:"([^"]*(?:""[^"]*)*)"|([^,]+))/g).map(v => 
+        v.replace(/^"|"$/g, '').replace(/""/g, '"')
+      );
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = values[i] || '');
+      if (!obj.id) obj.id = uid();
+      return obj;
+    });
+    
+    orders = data.concat(orders);
+    persist();
+    alert(`${t.imported} ${data.length} ${t.rows}`);
+    render();
+  } catch (err) {
+    alert(`${t.importError}: ${err.message}`);
+  }
+}
+
+// Sample Data
+function loadSampleData() {
+  orders = [
+    {
+      id: uid(),
+      clinic: 'Dr. Schmidt Zahnklinik Berlin',
+      patient: 'Hans Müller',
+      contact: 'dr.schmidt@zahnklinik-berlin.de',
+      type: 'Crown (Zirconia)',
+      receivedDate: '2025-10-10',
+      dueDate: '2025-10-20',
+      status: 'In Progress',
+      shippingCompany: 'DHL',
+      trackingNumber: '',
+      notes: 'Shade A2, upper right molar'
+    },
+    {
+      id: uid(),
+      clinic: 'SmileCare München',
+      patient: 'Anna Weber',
+      contact: '+49 89 1234567',
+      type: 'Bridge (3-unit)',
+      receivedDate: '2025-10-12',
+      dueDate: '2025-10-25',
+      status: 'Shipped',
+      shippingCompany: 'DHL',
+      trackingNumber: 'JJD012345678901234567890',
+      notes: 'Rush order possible if needed'
+    },
+    {
+      id: uid(),
+      clinic: 'Dental Excellence Hamburg',
+      patient: 'Klaus Fischer',
+      contact: 'info@dental-hamburg.de',
+      type: 'Full Denture (Upper)',
+      receivedDate: '2025-10-08',
+      dueDate: '2025-10-18',
+      status: 'Shipped',
+      shippingCompany: 'UPS',
+      trackingNumber: '1Z999AA10123456784',
+      notes: 'Patient fitting scheduled for Oct 19'
+    },
+    {
+      id: uid(),
+      clinic: 'ProDent Frankfurt',
+      patient: 'Maria Schmidt',
+      contact: '+49 69 7654321',
+      type: 'Implant Crown',
+      receivedDate: '2025-10-14',
+      dueDate: '2025-10-22',
+      status: 'Completed',
+      shippingCompany: '',
+      trackingNumber: '',
+      notes: 'Straumann system, position 26 - Ready for pickup'
+    },
+    {
+      id: uid(),
+      clinic: 'Zahnärzte am Markt Köln',
+      patient: 'Thomas Becker',
+      contact: 'kontakt@zahnaerzte-koeln.de',
+      type: 'Veneer (Ceramic)',
+      receivedDate: '2025-10-05',
+      dueDate: '2025-10-15',
+      status: 'Delivered',
+      shippingCompany: 'Hermes',
+      trackingNumber: 'H1234567890DE',
+      notes: 'Minimal prep veneers, Hollywood white'
+    }
+  ];
+  persist();
+  render();
+}
+
+// Initialize app
+init();
+</script>
+</body>
+</html>

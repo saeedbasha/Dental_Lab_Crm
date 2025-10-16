@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DentalLab Pro - نظام تتبع الطلبات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .rtl-text {
+            direction: rtl;
+            text-align: right;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function DentalLabTracker() {
+            const [language, setLanguage] = useState('de');
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [orders, setOrders] = useState([
+                {
+                    id: 'ORD-001',
+                    clinicName: 'Dr. Schmidt Zahnklinik',
+                    patientName: 'Max Müller',
+                    workType: 'Krone',
+                    status: 'in_production',
+                    orderDate: '2025-10-14',
+                    dueDate: '2025-10-20',
+                    notes: 'Farbe: A2',
+                    urgency: 'normal'
+                },
+                {
+                    id: 'ORD-002',
+                    clinicName: 'Zahnarztpraxis Weber',
+                    patientName: 'Anna Fischer',
+                    workType: 'Brücke',
+                    status: 'received',
+                    orderDate: '2025-10-16',
+                    dueDate: '2025-10-22',
+                    notes: 'Oberkiefer, 3 Einheiten',
+                    urgency: 'urgent'
+                },
+                {
+                    id: 'ORD-003',
+                    clinicName: 'Dr. Meyer & Partner',
+                    patientName: 'Thomas Klein',
+                    workType: 'Implantat',
+                    status: 'quality_check',
+                    orderDate: '2025-10-13',
+                    dueDate: '2025-10-19',
+                    notes: 'Implantat Position 16',
+                    urgency: 'normal'
+                }
+            ]);
+            const [newOrder, setNewOrder] = useState({
+                clinicName: '',
+                patientName: '',
+                workType: '',
+                dueDate: '',
+                notes: '',
+                urgency: 'normal'
+            });
+            const [showAddForm, setShowAddForm] = useState(false);
+            const [clinics, setClinics] = useState([
+                { id: 1, name: 'Dr. Schmidt Zahnklinik', address: 'Hauptstraße 123, 10115 Berlin', email: 'info@schmidt-zahnarzt.de', phone: '+49 30 12345678' },
+                { id: 2, name: 'Zahnarztpraxis Weber', address: 'Kaiserstraße 45, 80801 München', email: 'kontakt@weber-dental.de', phone: '+49 89 87654321' },
+                { id: 3, name: 'Dr. Meyer & Partner', address: 'Königsallee 67, 40212 Düsseldorf', email: 'praxis@meyer-dental.de', phone: '+49 211 98765432' }
+            ]);
+
+            const translations = {
+                de: {
+                    title: 'DentalLab Pro - Auftragsverwaltung',
+                    dashboard: 'Dashboard',
+                    orders: 'Aufträge',
+                    clinics: 'Kliniken',
+                    addOrder: 'Neuer Auftrag',
+                    clinicName: 'Klinikname',
+                    patientName: 'Patient',
+                    workType: 'Arbeitstyp',
+                    status: 'Status',
+                    orderDate: 'Bestelldatum',
+                    dueDate: 'Fälligkeitsdatum',
+                    notes: 'Notizen',
+                    urgency: 'Dringlichkeit',
+                    actions: 'Aktionen',
+                    totalOrders: 'Gesamtaufträge',
+                    inProduction: 'In Produktion',
+                    completed: 'Abgeschlossen',
+                    urgent: 'Dringend',
+                    normal: 'Normal',
+                    low: 'Niedrig',
+                    received: 'Empfangen',
+                    quality_check: 'Qualitätskontrolle',
+                    ready: 'Bereit',
+                    shipped: 'Versandt',
+                    address: 'Adresse',
+                    email: 'E-Mail',
+                    phone: 'Telefon',
+                    save: 'Speichern',
+                    cancel: 'Abbrechen',
+                    crown: 'Krone',
+                    bridge: 'Brücke',
+                    implant: 'Implantat',
+                    denture: 'Zahnersatz',
+                    veneer: 'Veneer'
+                },
+                en: {
+                    title: 'DentalLab Pro - Order Management',
+                    dashboard: 'Dashboard',
+                    orders: 'Orders',
+                    clinics: 'Clinics',
+                    addOrder: 'New Order',
+                    clinicName: 'Clinic Name',
+                    patientName: 'Patient',
+                    workType: 'Work Type',
+                    status: 'Status',
+                    orderDate: 'Order Date',
+                    dueDate: 'Due Date',
+                    notes: 'Notes',
+                    urgency: 'Urgency',
+                    actions: 'Actions',
+                    totalOrders: 'Total Orders',
+                    inProduction: 'In Production',
+                    completed: 'Completed',
+                    urgent: 'Urgent',
+                    normal: 'Normal',
+                    low: 'Low',
+                    received: 'Received',
+                    in_production: 'In Production',
+                    quality_check: 'Quality Check',
+                    ready: 'Ready',
+                    shipped: 'Shipped',
+                    address: 'Address',
+                    email: 'Email',
+                    phone: 'Phone',
+                    save: 'Save',
+                    cancel: 'Cancel',
+                    crown: 'Crown',
+                    bridge: 'Bridge',
+                    implant: 'Implant',
+                    denture: 'Denture',
+                    veneer: 'Veneer'
+                },
+                ar: {
+                    title: 'دينتال لاب برو - إدارة الطلبات',
+                    dashboard: 'لوحة التحكم',
+                    orders: 'الطلبات',
+                    clinics: 'العيادات',
+                    addOrder: 'طلب جديد',
+                    clinicName: 'اسم العيادة',
+                    patientName: 'المريض',
+                    workType: 'نوع العمل',
+                    status: 'الحالة',
+                    orderDate: 'تاريخ الطلب',
+                    dueDate: 'تاريخ الاستحقاق',
+                    notes: 'ملاحظات',
+                    urgency: 'الأولوية',
+                    actions: 'الإجراءات',
+                    totalOrders: 'إجمالي الطلبات',
+                    inProduction: 'قيد الإنتاج',
+                    completed: 'مكتمل',
+                    urgent: 'عاجل',
+                    normal: 'عادي',
+                    low: 'منخفض',
+                    received: 'مستلم',
+                    in_production: 'قيد الإنتاج',
+                    quality_check: 'فحص الجودة',
+                    ready: 'جاهز',
+                    shipped: 'تم الشحن',
+                    address: 'العنوان',
+                    email: 'البريد الإلكتروني',
+                    phone: 'الهاتف',
+                    save: 'حفظ',
+                    cancel: 'إلغاء',
+                    crown: 'تاج',
+                    bridge: 'جسر',
+                    implant: 'زراعة',
+                    denture: 'طقم أسنان',
+                    veneer: 'قشرة'
+                }
+            };
+
+            const t = translations[language];
+
+            const getStatusColor = (status) => {
+                const colors = {
+                    received: 'bg-blue-100 text-blue-800',
+                    in_production: 'bg-yellow-100 text-yellow-800',
+                    quality_check: 'bg-purple-100 text-purple-800',
+                    ready: 'bg-green-100 text-green-800',
+                    shipped: 'bg-gray-100 text-gray-800'
+                };
+                return colors[status] || 'bg-gray-100 text-gray-800';
+            };
+
+            const getUrgencyColor = (urgency) => {
+                const colors = {
+                    urgent: 'bg-red-100 text-red-800 border-red-300',
+                    normal: 'bg-blue-100 text-blue-800 border-blue-300',
+                    low: 'bg-green-100 text-green-800 border-green-300'
+                };
+                return colors[urgency] || 'bg-gray-100 text-gray-800';
+            };
+
+            const handleAddOrder = () => {
+                const order = {
+                    id: `ORD-${String(orders.length + 1).padStart(3, '0')}`,
+                    ...newOrder,
+                    status: 'received',
+                    orderDate: new Date().toISOString().split('T')[0]
+                };
+                setOrders([...orders, order]);
+                setNewOrder({
+                    clinicName: '',
+                    patientName: '',
+                    workType: '',
+                    dueDate: '',
+                    notes: '',
+                    urgency: 'normal'
+                });
+                setShowAddForm(false);
+            };
+
+            const updateOrderStatus = (orderId, newStatus) => {
+                setOrders(orders.map(order => 
+                    order.id === orderId ? { ...order, status: newStatus } : order
+                ));
+            };
+
+            const Dashboard = () => {
+                const stats = {
+                    total: orders.length,
+                    inProduction: orders.filter(o => o.status === 'in_production').length,
+                    completed: orders.filter(o => o.status === 'shipped').length,
+                    urgent: orders.filter(o => o.urgency === 'urgent').length
+                };
+
+                return (
+                    <div className="animate-fadeIn">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-blue-500">
+                                <h3 className="text-gray-500 text-sm font-medium">{t.totalOrders}</h3>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.total}</p>
+                            </div>
+                            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-yellow-500">
+                                <h3 className="text-gray-500 text-sm font-medium">{t.inProduction}</h3>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.inProduction}</p>
+                            </div>
+                            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
+                                <h3 className="text-gray-500 text-sm font-medium">{t.completed}</h3>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.completed}</p>
+                            </div>
+                            <div className="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
+                                <h3 className="text-gray-500 text-sm font-medium">{t.urgent}</h3>
+                                <p className="text-3xl font-bold text-gray-800 mt-2">{stats.urgent}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-lg p-6">
+                            <h2 className="text-2xl font-bold mb-4 text-gray-800">Aktuelle Aufträge</h2>
+                            <div className="space-y-4">
+                                {orders.slice(0, 5).map(order => (
+                                    <div key={order.id} className="border-l-4 border-blue-500 bg-gray-50 p-4 rounded-r-lg hover:shadow-md transition-shadow">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="font-bold text-lg text-gray-800">{order.id} - {order.clinicName}</h3>
+                                                <p className="text-gray-600">Patient: {order.patientName}</p>
+                                                <p className="text-gray-600">Typ: {order.workType}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                                                    {t[order.status]}
+                                                </span>
+                                                <p className="text-sm text-gray-500 mt-2">Fällig: {order.dueDate}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const OrdersList = () => (
+                <div className="animate-fadeIn">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">{t.orders}</h2>
+                        <button
+                            onClick={() => setShowAddForm(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-lg transition-colors"
+                        >
+                            + {t.addOrder}
+                        </button>
+                    </div>
+
+                    {showAddForm && (
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <h3 className="text-xl font-bold mb-4">{t.addOrder}</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.clinicName}</label>
+                                    <select
+                                        value={newOrder.clinicName}
+                                        onChange={(e) => setNewOrder({...newOrder, clinicName: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                    >
+                                        <option value="">Wählen Sie eine Klinik</option>
+                                        {clinics.map(clinic => (
+                                            <option key={clinic.id} value={clinic.name}>{clinic.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.patientName}</label>
+                                    <input
+                                        type="text"
+                                        value={newOrder.patientName}
+                                        onChange={(e) => setNewOrder({...newOrder, patientName: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.workType}</label>
+                                    <select
+                                        value={newOrder.workType}
+                                        onChange={(e) => setNewOrder({...newOrder, workType: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                    >
+                                        <option value="">Typ wählen</option>
+                                        <option value="Krone">{t.crown}</option>
+                                        <option value="Brücke">{t.bridge}</option>
+                                        <option value="Implantat">{t.implant}</option>
+                                        <option value="Zahnersatz">{t.denture}</option>
+                                        <option value="Veneer">{t.veneer}</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.dueDate}</label>
+                                    <input
+                                        type="date"
+                                        value={newOrder.dueDate}
+                                        onChange={(e) => setNewOrder({...newOrder, dueDate: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.urgency}</label>
+                                    <select
+                                        value={newOrder.urgency}
+                                        onChange={(e) => setNewOrder({...newOrder, urgency: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                    >
+                                        <option value="low">{t.low}</option>
+                                        <option value="normal">{t.normal}</option>
+                                        <option value="urgent">{t.urgent}</option>
+                                    </select>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.notes}</label>
+                                    <textarea
+                                        value={newOrder.notes}
+                                        onChange={(e) => setNewOrder({...newOrder, notes: e.target.value})}
+                                        className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                                        rows="3"
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex gap-4 mt-4">
+                                <button
+                                    onClick={handleAddOrder}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg"
+                                >
+                                    {t.save}
+                                </button>
+                                <button
+                                    onClick={() => setShowAddForm(false)}
+                                    className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg"
+                                >
+                                    {t.cancel}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.clinicName}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.patientName}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.workType}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.status}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.dueDate}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.urgency}</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t.actions}</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {orders.map(order => (
+                                    <tr key={order.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.clinicName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.patientName}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.workType}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <select
+                                                value={order.status}
+                                                onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                                                className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}
+                                            >
+                                                <option value="received">{t.received}</option>
+                                                <option value="in_production">{t.in_production}</option>
+                                                <option value="quality_check">{t.quality_check}</option>
+                                                <option value="ready">{t.ready}</option>
+                                                <option value="shipped">{t.shipped}</option>
+                                            </select>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{order.dueDate}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getUrgencyColor(order.urgency)}`}>
+                                                {t[order.urgency]}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <button className="text-blue-600 hover:text-blue-900 mr-2">👁️</button>
+                                            <button className="text-green-600 hover:text-green-900">✏️</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+
+            const ClinicsList = () => (
+                <div className="animate-fadeIn">
+                    <h2 className="text-2xl font-bold mb-6 text-gray-800">{t.clinics}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {clinics.map(clinic => (
+                            <div key={clinic.id} className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                                <h3 className="text-xl font-bold mb-3 text-gray-800">{clinic.name}</h3>
+                                <div className="space-y-2 text-gray-600">
+                                    <p className="flex items-center">
+                                        <span className="mr-2">📍</span>
+                                        <span className="text-sm">{clinic.address}</span>
+                                    </p>
+                                    <p className="flex items-center">
+                                        <span className="mr-2">📧</span>
+                                        <a href={`mailto:${clinic.email}`} className="text-sm text-blue-600 hover:underline">{clinic.email}</a>
+                                    </p>
+                                    <p className="flex items-center">
+                                        <span className="mr-2">📞</span>
+                                        <a href={`tel:${clinic.phone}`} className="text-sm text-blue-600 hover:underline">{clinic.phone}</a>
+                                    </p>
+                                </div>
+                                <div className="mt-4 pt-4 border-t border-gray-200">
+                                    <p className="text-sm text-gray-500">
+                                        Aktive Aufträge: {orders.filter(o => o.clinicName === clinic.name).length}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className={language === 'ar' ? 'rtl-text' : ''}>
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
+                        <div className="container mx-auto px-4 py-6">
+                            <div className="flex justify-between items-center">
+                                <h1 className="text-3xl font-bold">🦷 {t.title}</h1>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setLanguage('de')}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${language === 'de' ? 'bg-white text-blue-600' : 'bg-blue-500 hover:bg-blue-400'}`}
+                                    >
+                                        Deutsch
+                                    </button>
+                                    <button
+                                        onClick={() => setLanguage('en')}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${language === 'en' ? 'bg-white text-blue-600' : 'bg-blue-500 hover:bg-blue-400'}`}
+                                    >
+                                        English
+                                    </button>
+                                    <button
+                                        onClick={() => setLanguage('ar')}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${language === 'ar' ? 'bg-white text-blue-600' : 'bg-blue-500 hover:bg-blue-400'}`}
+                                    >
+                                        العربية
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="bg-white shadow-md">
+                        <div className="container mx-auto px-4">
+                            <nav className="flex gap-1">
+                                <button
+                                    onClick={() => setActiveTab('dashboard')}
+                                    className={`px-6 py-4 font-medium transition-colors ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+                                >
+                                    📊 {t.dashboard}
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('orders')}
+                                    className={`px-6 py-4 font-medium transition-colors ${activeTab === 'orders' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+                                >
+                                    📋 {t.orders}
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('clinics')}
+                                    className={`px-6 py-4 font-medium transition-colors ${activeTab === 'clinics' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+                                >
+                                    🏥 {t.clinics}
+                                </button>
+                            </nav>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="container mx-auto px-4 py-8">
+                        {activeTab === 'dashboard' && <Dashboard />}
+                        {activeTab === 'orders' && <OrdersList />}
+                        {activeTab === 'clinics' && <ClinicsList />}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="bg-gray-800 text-white mt-12">
+                        <div className="container mx-auto px-4 py-6 text-center">
+                            <p>© 2025 DentalLab Pro - Professional Lab Management System</p>
+                            <p className="text-sm text-gray-400 mt-2">Made for German Dental Laboratories</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<DentalLabTracker />, document.getElementById('root'));
+    </script>
+</body>
+</html>
